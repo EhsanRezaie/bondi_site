@@ -49,4 +49,14 @@ jobs:
             cd /opt/bondi-site
             docker compose up -d --build
             docker image prune -f
-            curl -fsS -o /dev/null -w 'site http %{http_code}\n' http://localhost:8444/
+            for i in $(seq 1 15); do
+              code=$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:8444/ || true)
+              if [ "$code" = "200" ]; then
+                echo "site http $code"
+                exit 0
+              fi
+              echo "waiting for site (attempt $i/15)..."
+              sleep 3
+            done
+            echo "site failed to respond" >&2
+            exit 1
