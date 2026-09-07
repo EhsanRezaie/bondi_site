@@ -1,0 +1,27 @@
+services:
+  site:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bondi_site
+    restart: unless-stopped
+    ports:
+      # localhost-only: the site is reached through the backend nginx TLS entry
+      # point (https://bondiapp.ir). Kept bound to 127.0.0.1 so the CI
+      # healthcheck (curl http://localhost:8444) still works.
+      - "127.0.0.1:8444:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+    networks:
+      - default
+      - bondi_frontend
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  bondi_frontend:
+    external: true
